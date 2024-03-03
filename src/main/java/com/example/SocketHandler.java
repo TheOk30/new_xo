@@ -1,7 +1,12 @@
 package com.example;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 //class that controls socket communication between server and client with all the methods needed
@@ -24,19 +29,32 @@ public class SocketHandler {
     }
 
     // recieve data function from socket
-    public String Receive() {
+    public GameElements Receive() {
         try {
-            return this.in.readUTF();
-        } catch (Exception e) {
+            int length = this.in.readInt(); // Read the length of the byte array
+            byte[] bytes = new byte[length];
+            this.in.readFully(bytes); // Read the byte array
+            ByteArrayInputStream byteStream = new ByteArrayInputStream(bytes);
+            ObjectInputStream objectStream = new ObjectInputStream(byteStream);
+            return (GameElements) objectStream.readObject();
+        } 
+        
+        catch (Exception e) {
             System.out.println("Error: " + e);
+            return null;
         }
-        return "DID NOT RECEIVE";
     }
 
     // send data function to socket
-    public void Send(String res) {
+    public void Send(GameElements res) {
         try {
-            this.out.writeUTF(res);
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectStream = new ObjectOutputStream(byteStream);
+            objectStream.writeObject(res);
+            objectStream.flush();
+            byte[] bytes = byteStream.toByteArray();
+            this.out.writeInt(bytes.length); // Write the length of the byte array
+            this.out.write(bytes); // Write the byte array
             this.out.flush();
         } catch (Exception e) {
             System.out.println("Error: " + e);

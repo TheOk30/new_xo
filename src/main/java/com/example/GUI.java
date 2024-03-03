@@ -81,8 +81,8 @@ public class GUI implements Initializable, gameInterface {
     }
 
     public void refresh() {
-        sock.Send("getPlayers");
-        sock.Send("isFull");
+        sock.Send(new GameElements("getPlayers"));
+        sock.Send(new GameElements("isFull"));
     }
 
     public void createGrid() {
@@ -100,7 +100,7 @@ public class GUI implements Initializable, gameInterface {
                         int x = GridPane.getColumnIndex(button);
                         int y = GridPane.getRowIndex(button);
                         try {
-                            sock.Send("changeGrid-" + x + "-" + y + "-" + value);
+                            sock.Send(new GameElements("changeGrid",String.valueOf(x),String.valueOf(y),String.valueOf(value)));
                         } catch (Exception e) {
                             System.out.println("Error: " + e);
                         }

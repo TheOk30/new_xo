@@ -20,18 +20,19 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            String message;
+            GameElements element;
             boolean running = true;
             GAME currentgame = null;
             
             //loop recives messeges per specific game
             while (running) {
                 try{
-                    message = this.clientSocketHandler.Receive();
-                    System.out.println("Received message: " + message);
+                    element = this.clientSocketHandler.Receive();
+                    String topic = element.getTopic();
+                    System.out.println("Received message: " + topic);
     
                     //closed connection
-                    if(message.equals("close")) {
+                    if(topic.equals("close")) {
                         System.out.println("client disconected - " + this.clientSocket.getLocalAddress().toString());
                         currentgame.close();
                         games.remove(currentgame);
@@ -40,25 +41,26 @@ public class ClientHandler implements Runnable {
                     }
     
                     //start a new game
-                    else if (message.contains("start")){
-                        String parts[] = message.split("-");
-                        String playerName = parts[1];
-                        int gridSize = Integer.parseInt(parts[2]);
+                    else if (topic.equals("start")){
+                        String playerName = element.getPlayerName();
+                        int gridSize = Integer.parseInt(element.getGridSize());
                         System.out.println("player name:" + playerName + " gridsize: " + gridSize);
     
                         // look for a waiting game
                         for (GAME game : games) {
                             if (game.getGridSize() == gridSize && !game.isFull()) {
-                                this.clientSocketHandler.Send("2");
+                                this.clientSocketHandler.Send(new GameElements("PlayerNum", "2"));
                                 game.setSocket(this.clientSocketHandler);
                                 game.setPlayer2(playerName);
                                 currentgame = game;
+                                games.remove(game);
+                                break;
                             }
                         }
     
                         //found an empty game
                         if (currentgame == null) {
-                            this.clientSocketHandler.Send("1");
+                            this.clientSocketHandler.Send(new GameElements("PlayerNum", "1"));
                             currentgame = new GAME(gridSize, playerName, this.clientSocketHandler);
                         }
     
@@ -67,32 +69,30 @@ public class ClientHandler implements Runnable {
                         System.out.println("Game created with size " + gridSize);
                     }
     
-                    else if (message.equals("getGridSize")) {
-                        this.clientSocketHandler.Send("isFull-" + String.valueOf(currentgame.isFull()));
+                    else if (topic.equals("getGridSize")) {
+                        this.clientSocketHandler.Send(new GameElements(String.valueOf(currentgame.getGridSize())));
                     }
     
-                    else if (message.equals("isFull")) {
-                        this.clientSocketHandler.Send(String.valueOf(currentgame.getGridSize()));
+                    else if (topic.equals("isFull")) {
+                        this.clientSocketHandler.Send(new GameElements("isFull",String.valueOf(currentgame.isFull())));
                     }
                     
                     //send the new grid after change
-                    else if (message.contains("changeGrid")) {
-                        String[] parts = message.split("-");
-                        currentgame.changeGrid(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),Integer.parseInt(parts[3]));
+                    else if (topic.equals("changeGrid")) {
+                        currentgame.changeGrid(Integer.parseInt(element.getX()), Integer.parseInt(element.getY()),Integer.parseInt(element.getValue()));
                     }
     
-                    else if (message.contains("getGrid")) {
-                        String[] parts = message.split("-");
+                    /*else if (topic.equals("getGrid")) {
                         this.clientSocketHandler.Send(String.valueOf(
-                                currentgame.getGrid(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]))));
-                    }
+                                currentgame.getGrid(Integer.parseInt(element.getX()), Integer.parseInt(element.getY()))));
+                    }*/
     
-                    else if (message.contains("getPlayers")) {
+                    else if (topic.equals("getPlayers")) {
                         String[] players = currentgame.getPlayers();
                         System.err.println(players[0].toString());
                         System.err.println(players[1].toString());
     
-                        this.clientSocketHandler.Send("getPlayers-" + players[0] + "-" + players[1]);
+                        this.clientSocketHandler.Send(new GameElements("getPlayers",players[0],players[1]));
                     }
                 }
 

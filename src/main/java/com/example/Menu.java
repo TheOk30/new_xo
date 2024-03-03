@@ -75,7 +75,7 @@ public class Menu {
             this.clientSocketHandler = new SocketHandler(this.clientSocket);
             GUI gui = new GUI(1, gridSize);
             gui.setGame(this.clientSocketHandler);
-            clientSocketHandler.Send("start-" + this.playerName.getText() + "-" + this.gridSize.getText());
+            clientSocketHandler.Send(new GameElements("start",this.playerName.getText(),this.gridSize.getText()));
 
             try {
                 Player player = new Player(playerName.getText());
@@ -113,31 +113,33 @@ public class Menu {
             loader.setController(gui);
             App.getPrimaryStage().setScene(new Scene(loader.load(), 640, 480));
             App.getPrimaryStage().setOnCloseRequest(e -> {
-                clientSocketHandler.Send("close");
+                clientSocketHandler.Send(new GameElements("close"));
             });
 
             new Thread(() -> {
                 Player player = playersDB.selectByUsername(playerName.getText());
                 Stats stats = playerStatsDB.selectByPlayerId(player.getId());
-                while (isRunning) {
-                    String message = clientSocketHandler.Receive();
 
-                    System.out.println("message is" + message);
+                while (isRunning) {
+                    GameElements element = clientSocketHandler.Receive();
+                    String topic = element.getTopic();
+
+                    System.out.println("message is" + topic);
 
                     Platform.runLater(() -> {
-                        if (message.equals("1") || message.equals("2")) {
-                            gui.setValue(Integer.parseInt(message));
+                        if (topic.equals("PlayerNum")) {
+                            gui.setValue(Integer.parseInt(element.getPlayerNumber()));
                         }
 
-                        else if (message.equals("enableGrid")) {
+                        else if (topic.equals("enableGrid")) {
                             gui.enableGrid();
                         }
 
-                        else if (message.equals("disableGrid")) {
+                        else if (topic.equals("disableGrid")) {
                             gui.disableGrid();
                         }
 
-                        else if (message.equals("win")) {
+                        else if (topic.equals("win")) {
                             try {
                                 gui.win(stats, playerName.getText());
                             }
@@ -147,7 +149,7 @@ public class Menu {
                             }
                         }
 
-                        else if (message.equals("lose")) {
+                        else if (topic.equals("lose")) {
                             try {
                                 gui.lose(stats, playerName.getText());
                             }
@@ -157,7 +159,7 @@ public class Menu {
                             }
                         }
 
-                        else if (message.equals("draw")) {
+                        else if (topic.equals("draw")) {
                             try {
                                 gui.draw(stats, playerName.getText());
                             }
@@ -167,34 +169,31 @@ public class Menu {
                             }
                         }
 
-                        else if (message.contains("refreshGrid")) {
-                            String[] parts = message.split("-");
-                            gui.updateGrid(Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
-                                    Integer.parseInt(parts[3]));
+                        else if (topic.equals("refreshGrid")) {
+                            gui.updateGrid(Integer.parseInt(element.getX()), Integer.parseInt(element.getY()),
+                                    Integer.parseInt(element.getValue()));
                         }
 
-                        else if (message.equals("refresh")) {
+                        else if (topic.equals("refresh")) {
                             gui.refresh();
                         }
 
-                        else if (message.equals("createGrid")) {
+                        else if (topic.equals("createGrid")) {
                             gui.createGrid();
                         }
 
-                        else if (message.contains("getPlayers")) {
-                            String[] parts = message.split("-");
-                            gui.setPlayer1(parts[1]);
-                            gui.setPlayer2(parts[2]);
+                        else if (topic.equals("getPlayers")) {
+                            gui.setPlayer1(element.getPlayer1Name());
+                            gui.setPlayer2(element.getPlayer2Name());
                             gui.updatePlayerNames();
                         }
 
-                        else if (message.contains("isFull")) {
-                            String[] parts = message.split("-");
-                            gui.setIsFull(parts[1]);
+                        else if (topic.equals("isFull")) {
+                            gui.setIsFull(element.getIsfull());
                             gui.playersJoined();
                         }
 
-                        else if (message.equals("close")) {
+                        else if (topic.equals("close")) {
                             this.clientSocketHandler.close();
                             try {
                                 this.clientSocket.close();

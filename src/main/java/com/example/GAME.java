@@ -45,8 +45,8 @@ public class GAME {
         grid[x][y] = value;
         checkWin();
         try {
-            sock1.Send("refreshGrid-" + x + "-" + y + "-" + value);
-            sock2.Send("refreshGrid-" + x + "-" + y + "-" + value);
+            sock1.Send(new GameElements("refreshGrid",String.valueOf(x),String.valueOf(y),String.valueOf(value)));
+            sock2.Send(new GameElements("refreshGrid",String.valueOf(x),String.valueOf(y),String.valueOf(value)));
             switchGrid(value);
         } catch (Exception e) {
             System.out.println("Error: " + e);
@@ -140,12 +140,12 @@ public class GAME {
     public void switchGrid(int value) {
         try {
             if (value == 1) {
-                sock1.Send("disableGrid");
-                sock2.Send("enableGrid");
+                sock1.Send(new GameElements("disableGrid"));
+                sock2.Send(new GameElements("enableGrid"));
 
             } else {
-                sock1.Send("enableGrid");
-                sock2.Send("disableGrid");
+                sock1.Send(new GameElements("enableGrid"));
+                sock2.Send(new GameElements("disableGrid"));
             }
         } catch (Exception e) {
             System.out.println("Error: " + e);
@@ -164,16 +164,16 @@ public class GAME {
                 stats2.setLosses(stats2.getLosses() + 1);
                 this.playerStatsDB.update(stats2);
                 this.playerStatsDB.saveChanges();
-                sock1.Send("win");
-                sock2.Send("lose");
+                sock1.Send(new GameElements("win"));
+                sock2.Send(new GameElements("lose"));
             } else {
                 stats1.setLosses(stats1.getLosses() + 1);
                 this.playerStatsDB.update(stats1);
                 stats2.setWins(stats2.getWins() + 1);
                 this.playerStatsDB.update(stats2);
                 this.playerStatsDB.saveChanges();
-                sock1.Send("lose");
-                sock2.Send("win");
+                sock1.Send(new GameElements("lose"));
+                sock2.Send(new GameElements("win"));
             }
         } catch (Exception e) {
             System.out.println("Error: " + e);
@@ -193,8 +193,8 @@ public class GAME {
             stats2.setDraws(stats2.getDraws() + 1);
             this.playerStatsDB.update(stats2);
             this.playerStatsDB.saveChanges();
-            sock1.Send("draw");
-            sock2.Send("draw");
+            sock1.Send(new GameElements("draw"));
+            sock2.Send(new GameElements("draw"));
 
         } catch (Exception e) {
             System.out.println("Error: " + e);
@@ -207,10 +207,10 @@ public class GAME {
 
     public void updateGUI() {
         try {
-            sock1.Send("getPlayers-" + player1 + "-" + player2);
-            sock2.Send("getPlayers-" + player1 + "-" + player2);
-            sock1.Send("isFull-true");
-            sock2.Send("isFull-true");
+            sock1.Send(new GameElements("getPlayers", player1,player2));
+            sock2.Send(new GameElements("getPlayers", player1,player2));
+            sock1.Send(new GameElements("isFull", "true"));
+            sock2.Send(new GameElements("isFull", "true"));
 
         } catch (Exception e) {
             System.out.println("Error: " + e);
@@ -221,8 +221,8 @@ public class GAME {
         this.player2 = player2;
         this.playersJoined = 2;
         try {
-            sock1.Send("createGrid");
-            sock2.Send("createGrid");
+            sock1.Send(new GameElements("createGrid"));
+            sock2.Send(new GameElements("createGrid"));
             updateGUI();
         } catch (Exception e) {
             System.out.println("Error: " + e);
@@ -243,11 +243,11 @@ public class GAME {
 
     public void close() {
         if (sock1 != null && !sock1.isClosed()) {
-            sock1.Send("close");
+            sock1.Send(new GameElements("close"));
             sock1.close();
         }
         if (sock2 != null && !sock2.isClosed()) {
-            sock2.Send("close");
+            sock2.Send(new GameElements("close"));
             sock2.close();
         }
     }
